@@ -24,7 +24,6 @@ class Post(BaseModel): # inherit from the BaseModel class of pydantic module
     content: str
     published: bool = True
 
-
 # block of code to connect to the database on the local machine 
 while True:
     try:  
@@ -37,8 +36,7 @@ while True:
         print("Database connection failed")
         print("error", error)
         time.sleep(3)
-        
-
+    
 
 my_posts = [ 
     {"title":"title of post 1","content":"content of post 1", "id":1},
@@ -77,11 +75,14 @@ def get_posts():
 # create a post in the api server using the post HTTP method
 @app.post("/posts", status_code=status.HTTP_201_CREATED) # includes a status code to display that post has been created
 def create_posts(post: Post): # this is the pydantic model that was created earlier using the BaseModel class
-    post_dict = post.dict()
-    post_dict['id'] = randrange(0,1000000)
-    post_dict['date'] = datetime(2025,8,14)
-    my_posts.append(post_dict)
-    return {"data":post_dict} # kinda like JSON format of reading information from a database
+    cursor.execute(
+        "INSERT INTO posts (title, content) VALUES (%s, %s) RETURNING *", 
+        (post.title,post.content)
+    )
+    new_post = cursor.fetchone()
+    conn.commit()
+
+    return {"data":new_post} # kinda like JSON format of reading information from a database
 
 
 
@@ -91,23 +92,24 @@ def create_posts(post: Post): # this is the pydantic model that was created earl
 # use best pratices and naming conventions 
 @app.get("/posts/{id}") #id field represents a path parameter
 def retrieve_post(id:int):
-   
-    post = find_post(id)
-    if not post:
+   cursor.execute("SELECT * FROM posts WHERE id = %s", (id,))
+   post=cursor.fetchone()
+   if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                              detail=f"post with id :{id} was not found")
-    return{"post_detail":post}
-
-
+   return{"post detail":post}
 
 # delete a post with a specific id
 # status code 204 means that the request was successful but there is no content to return
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id: int):
-    index = find_index_post(id)
-    if index is None:
+
+    cursor.execute("DELETE FROM posts WHERE id=%s RETURNING *", (id,))
+    delete_post= cursor.fetchone()
+    conn.commit()
+
+    if delete_post is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"post with id {id} not found")
-    my_posts.pop(index)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)  
 # No content to return after deletion
@@ -116,14 +118,13 @@ def delete_post(id: int):
 @app.put("/posts/{id}")
 def update_post(id: int, post: Post):
 
-    index = find_index_post(id)
-    if index is None:
+    cursor.execute("UPDATE posts SET title=%s, content=%s, published=%s RETURNING *",(post.title,post.content,post.published))
+
+    updated_post=cursor.fetchone()
+    if updated_post is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"post with id {id} not found")
     
-    post_dict = post.dict()
-    post_dict['id'] =id
-    my_posts[index]= post_dict
-    return {"data":post_dict}
+    return {"data":updated_post}
     
 
 
