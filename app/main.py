@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from gettext import find
-from fastapi import FastAPI, Response, status, HTTPException
+from fastapi import FastAPI, Response, status, HTTPException, Depends
 from fastapi.params import Body
 from pydantic import BaseModel
 from typing import Optional
@@ -8,10 +8,15 @@ from random import randrange
 import psycopg
 from psycopg.rows import dict_row
 import time
+from sqlalchemy.orm import Session
+from . import models
+from .database import engine, get_db
 
+models.Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI()
+
 
 
 # specify the kind of data that the api server will accept from the user 
@@ -28,6 +33,7 @@ class Post(BaseModel): # inherit from the BaseModel class of pydantic module
 while True:
     try:  
         conn = psycopg.connect("dbname=fastapi user=postgres password=postgres254 host=localhost")
+       
         cursor= conn.cursor(row_factory=dict_row) # to execute SQL statements
         print("Database connection successful")
         break
@@ -63,6 +69,10 @@ def find_index_post(id):
 def root(): # path operation functions (make them as descriptive as possible)
     return {"message": "welcome to my api@@"} #JSON language
 
+#test path operation
+@app.get("/sqlalchemy")
+def test_post(db:Session=Depends(get_db)):
+    return{"status":"success"}
 
 # get all posts from the api server
 @app.get("/posts")
@@ -118,13 +128,14 @@ def delete_post(id: int):
 @app.put("/posts/{id}")
 def update_post(id: int, post: Post):
 
-    cursor.execute("UPDATE posts SET title=%s, content=%s, published=%s RETURNING *",(post.title,post.content,post.published))
+    cursor.execute("UPDATE posts SET title=%s, content=%s, published=%s WHERE id=%s RETURNING *",(post.title,post.content,post.published, (id,)))
 
     updated_post=cursor.fetchone()
+    conn.commit() # save changes permanently to the database
     if updated_post is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"post with id {id} not found")
     
-    return {"data":updated_post}
+    return {"data":updated_post}  # for postman 
     
 
 
