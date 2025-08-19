@@ -82,7 +82,7 @@ def get_post(id:int):
     return{f"posts":post}
 
 
-@app.post("/posts", )
+@app.post("/posts", status_code=status.HTTP_201_CREATED)
 def create_post(post:Post):
     cursor.execute("INSERT INTO posts (title, content) VALUES (%s, %s) RETURNING *", 
                    (post.title, post.content,))
@@ -106,7 +106,7 @@ def update_post(id:int, post:Post):
 
 @app.delete("/posts/{id}")
 def delete_post(id:int):
-    cursor.execute("DELETE * FROM posts WHERE id=%s RETURNING*",(id,))
+    cursor.execute("DELETE FROM posts WHERE id=%s RETURNING*",(id,))
     deleted_post = cursor.fetchone()
     conn.commit()
     if deleted_post == None:
