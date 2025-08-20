@@ -2,14 +2,13 @@ from datetime import date, datetime
 from gettext import find
 from fastapi import FastAPI, Response, status, HTTPException, Depends
 from fastapi.params import Body
-from pydantic import BaseModel
 from typing import Optional
 from random import randrange
 import psycopg
 from psycopg.rows import dict_row
 import time
 from sqlalchemy.orm import Session
-from . import models
+from . import models, schemas
 from .database import engine, get_db
 
 models.Base.metadata.create_all(bind=engine)
@@ -18,16 +17,6 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-
-
-# specify the kind of data that the api server will accept from the user 
-# not any other kind of data
-# title str, content str,
-# schema defined with pydantic model
-class Post(BaseModel): # inherit from the BaseModel class of pydantic module
-    title: str
-    content: str
-    published: bool = True
 
 
 
@@ -108,7 +97,7 @@ def get_posts(db:Session=Depends(get_db)):
 
 # create a post in the api server using the post HTTP method
 @app.post("/posts", status_code=status.HTTP_201_CREATED) # includes a status code to display that post has been created
-def create_posts(post: Post, db:Session=Depends(get_db)): # this is the pydantic model that was created earlier using the BaseModel class
+def create_posts(post: schemas.PostCreate, db:Session=Depends(get_db)): # this is the pydantic model that was created earlier using the BaseModel class
 #    cursor.execute(
 #        "INSERT INTO posts (title, content) VALUES (%s, %s) RETURNING *", 
 #        (post.title,post.content)
@@ -167,7 +156,7 @@ def delete_post(id: int,db:Session=Depends(get_db)):
 
 # update a post with a specific id
 @app.put("/posts/{id}")
-def update_post(id: int, post: Post, db:Session=Depends(get_db)):
+def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db)):
 
 #    cursor.execute("UPDATE posts SET title=%s, content=%s, published=%s WHERE id=%s RETURNING *",(post.title,post.content,post.published, (id,)))
 
