@@ -1,4 +1,8 @@
 import sys
+
+import sqlalchemy
+
+from app.database import SQLALCHEMY_DATABASE_URL, SessionLocal
 print("Python executable in use:", sys.executable)
 
 try:
@@ -114,11 +118,32 @@ def delete_post(id:int):
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)  
 
+
+
+# creating a database connection using sqlalechmy
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+
+SQLALCHEMY_DATABASE_URL = "postgres+psycopg://postgres:postgres@254localhost/fastapi"
+
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+
+SessionLocal = sessionmaker(autoconnect=False, autoflush=False, bind=engine)
+
+
+Base= declarative_base()
+
+
+#creating database models using sqlalchemy
+
+from sqlalchemy import Column, String, Boolean, CHAR, Integer
+
+class Pets(Base):
+    __tablename__= "current pets"
+
+    name = Column("name",String,nullable=False)
+    color = Column("color", String, nullable=False)
+    number = Column("number", Integer, nullable = False)
     
-
-
-
-
-
-
 
