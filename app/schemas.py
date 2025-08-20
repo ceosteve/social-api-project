@@ -1,6 +1,8 @@
 
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
+
+from app.database import Base
 
 
 
@@ -19,7 +21,9 @@ class PostBase(BaseModel):
 class PostCreate(PostBase):
     pass
 
- 
+
+
+ #post response model
 class PostResponse(PostBase):
     id: int
     created_at: datetime
@@ -27,3 +31,21 @@ class PostResponse(PostBase):
     
     class Config:
       from_attributes = True
+
+
+#schema to define the data a user provides when they send a request
+# this is a pydantic model so it has to inherit from the BaseModel
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+
+
+# user response model, what data shoud users get back when they create an account
+class UserOut(BaseModel):
+    id: int
+    email: EmailStr
+    class Config:
+        from_attributes = True  # convert from sqlalchemy model to a regular pydantic model
+
+
+
