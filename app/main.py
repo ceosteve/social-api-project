@@ -2,7 +2,7 @@ from datetime import date, datetime
 from gettext import find
 from fastapi import FastAPI, Response, status, HTTPException, Depends
 from fastapi.params import Body
-from typing import Optional
+from typing import Optional, List
 from random import randrange
 import psycopg
 from psycopg.rows import dict_row
@@ -73,22 +73,21 @@ def root(): # path operation functions (make them as descriptive as possible)
 
 
 # get all posts from the api server
-@app.get("/posts")
+@app.get("/posts", response_model=List[schemas.PostResponse])
 def get_posts(db:Session=Depends(get_db)):
     posts=db.query(models.Posts).all()
 #    cursor.execute("SELECT *FROM posts")
 #    posts =cursor.fetchall()
     
-    return {"data":posts}
-
+    return posts
 
 
 
 # create a post in the api server using the post HTTP method
-@app.post("/posts", status_code=status.HTTP_201_CREATED) # includes a status code to display that post has been created
+@app.post("/posts", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse) # includes a status code to display that post has been created
 def create_posts(post: schemas.PostCreate, db:Session=Depends(get_db)): # this is the pydantic model that was created earlier using the BaseModel class
 #    cursor.execute(
-#        "INSERT INTO posts (title, content) VALUES (%s, %s) RETURNING *", 
+#        "INSERT INTO posts (title, content) VALUES (%s, %s) RETURNING *", s
 #        (post.title,post.content)
 #    )
 #    new_post = cursor.fetchone()
@@ -97,7 +96,7 @@ def create_posts(post: schemas.PostCreate, db:Session=Depends(get_db)): # this i
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
-    return {"data":new_post} # kinda like JSON format of reading information from a database
+    return new_post # kinda like JSON format of reading information from a database
 
 
 
@@ -106,7 +105,7 @@ def create_posts(post: schemas.PostCreate, db:Session=Depends(get_db)): # this i
 # is unavailable in the server
 # data extracted is stored as a pydantic model and each has a method called .dict
 # use best pratices and naming conventions 
-@app.get("/posts/{id}") #id field represents a path parameter
+@app.get("/posts/{id}", response_model=schemas.PostResponse) #id field represents a path parameter
 def retrieve_post(id:int,db:Session=Depends(get_db)):
 #   cursor.execute("SELECT * FROM posts WHERE id = %s", (id,))
 #   post=cursor.fetchone()
@@ -116,7 +115,7 @@ def retrieve_post(id:int,db:Session=Depends(get_db)):
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                              detail=f"post with id :{id} was not found")
-    return{"post detail":post}
+    return post
 
 
 
@@ -144,7 +143,7 @@ def delete_post(id: int,db:Session=Depends(get_db)):
 
 
 # update a post with a specific id
-@app.put("/posts/{id}")
+@app.put("/posts/{id}", response_model=schemas.PostResponse)
 def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db)):
 
 #    cursor.execute("UPDATE posts SET title=%s, content=%s, published=%s WHERE id=%s RETURNING *",(post.title,post.content,post.published, (id,)))
@@ -162,9 +161,8 @@ def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db)):
     post_query.update(post.dict(), synchronize_session=False)
     db.commit()
 
-    return {"data":post_query.first()}  # for postman 
+    return post_query.first()  # for postman 
     
-
 
 
 
