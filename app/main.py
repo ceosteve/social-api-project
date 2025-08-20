@@ -119,6 +119,7 @@ def retrieve_post(id:int,db:Session=Depends(get_db)):
 
 
 
+
 # delete a post with a specific id
 # status code 204 means that the request was successful but there is no content to return
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -163,6 +164,17 @@ def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db)):
 
     return post_query.first()  # for postman 
     
+
+
+
+@app.post("/users", status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut) # includes a status code to display that post has been created
+def create_user(user: schemas.UserCreate, db:Session=Depends(get_db)):
+    new_user = models.User(**user.dict())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return new_user
 
 
 
