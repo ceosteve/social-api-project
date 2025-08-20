@@ -80,7 +80,7 @@ def get_posts(db:Session=Depends(get_db)):
 #    posts =cursor.fetchall()
     
     return posts
-
+ 
 
 
 # create a post in the api server using the post HTTP method
