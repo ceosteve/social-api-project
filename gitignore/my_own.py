@@ -3,6 +3,7 @@ import sys
 import sqlalchemy
 
 from app.database import SQLALCHEMY_DATABASE_URL, SessionLocal
+from gitignore import my_own
 print("Python executable in use:", sys.executable)
 
 try:
@@ -20,7 +21,7 @@ from random import randrange
 from turtle import pos
 from typing import Optional
 from pydantic import BaseModel
-from fastapi import FastAPI, status, HTTPException, Response
+from fastapi import FastAPI, status, HTTPException, Depends, Response
 import psycopg
 from psycopg.rows import dict_row
 import time
@@ -122,7 +123,7 @@ def delete_post(id:int):
 
 # creating a database connection using sqlalechmy
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 
 SQLALCHEMY_DATABASE_URL = "postgres+psycopg://postgres:postgres@254localhost/fastapi"
@@ -145,5 +146,11 @@ class Pets(Base):
     name = Column("name",String,nullable=False)
     color = Column("color", String, nullable=False)
     number = Column("number", Integer, nullable = False)
-    
+
+
+@app.get("/pets")
+def get_posts(db:Session= Depends(get_post)):
+    pets=db.query(Pets).all()
+    return{"data": pets}
+
 

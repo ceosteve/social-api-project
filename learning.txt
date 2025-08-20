@@ -1,0 +1,122 @@
+CRUD based applications
+Creat posts
+Read posts
+Update posts
+Delete posts
+
+
+conventions for creating a CRUD based API applications
+
+CREAT   =  POST = @app.post("/posts)
+READ    =  GET = @app.get("/post/{id})
+        =  GET = @app.get("/posts)
+UPDATE  =  PUT/PATCH = @app.put("/posts/{id}")
+DELETE  =  DELETE = @app.delete("/posts/{id}")
+
+>  When creating a path operation, it must have a decorator, in this case
+   the decorator is an instance created globally using the FASTPI class of the 
+   fastapi module.
+
+>  The path operation must also contain a HTTP method to send a CRUD based request
+   to the API server. 
+
+>  The path operation should also specify a specific path on the URL, which will be used
+   to locate a particular resource on the server and perform the HTTP request on it.
+
+>  The path operation function specifies what the API will do when a specific request 
+   is sent to the server
+
+> The path operation fucntion is a decorator. Ideally, it adds behavior to the path operation 
+  function without changing the function itself and then returns a new function, just the way it
+  would work in a normal python script. 
+
+
+DATABASE
+a collection of organized data that can be easily accessed and managed
+we dont directly interact with the database, rather we use a database management system as the link between 
+us and the database
+
+Relationsl databases
+  1. MYSQL
+  2.POSTGRESQL
+  3.ORACLE
+  4.SQL SERVER
+
+NoSQL databases
+  1. MongoDB
+  2.DynamoDB
+  3.ORACLE
+  4. SQL SERVER
+
+SQL = Structured query language, language used to communicate with a database management system
+In POSTGRESQL, installing the DMS automatically creates one instance which is a databse called posgres
+This database is necessary since Postgres needs a name of a database to connect to
+
+Tables 
+used for different kinds of data
+in relational databases, these tables need to be designed in the database in such a manner that they have
+a relationship with each other
+
+Databases have datatypes
+for Postgres, the datatypes include
+Numeric -  int, decimal, precision
+text - varchar, text
+bool - boolean
+sequence - array
+
+One primary key has to be defined in a table
+each entry has to be unique for the data we store in tables within a databse
+as long as it can identify each entry uniquely
+
+Unique Constraint can be added to a column to ensure that each entry is unique and that there are no duplicates
+Null Constraint can be used to ensure that   Postgres does not use Null if a column is left blank. Rather, 
+it is ging to throw an error
+
+
+psycopg module is used to connect an API to a database.
+psycopg.connnect - connect to a database
+opening a cursor to perform operations on a database (conn.cursor())
+can use the cursor.execute() method to query a database and obtain data as python objects
+
+This is the method of writing API routes as SQL querries. But first, an API has to be connected to a database. 
+Then SQL code can be written to query the database using CRUD operations (CREATE, READ, UDPDATE, DELETE)
+Keep in mind that these queries still need to be sent to the server as HTTP requests therefore there is need to 
+still maintain the path operations that give ports on a URL via which to execute the SQL query commands.
+ 
+ After executing a put HTTP request, i.e, an UPDATE SQL query, those changes need to be committed permanently
+ to the database. This is achieved by running a conn.commit() command.
+
+
+ WORKING WITH A DATABASE WITHING A PYTHON APPLICATION 
+
+ An application can talk to a database using either a database driver like pgadmin in Postgres
+ where SQL commands are sent directly to the database. 
+ Alternatively, an ORM (OBJECT RELATIONAL MAPPER) can be used as a layer of abstraction between the database and the FASTAPI application
+ Hence, database operations can be performed using traditional python code which will then be translated into SQL commands
+
+The ORM takes our python code and translates it into SQL commands since SQL is the only language through which
+applications can talk to databases. 
+In that case, we only need to write standard python code and not necessarily write SQL commands directly into our application
+
+Various ORMs exists 
+SQLALCHEMY - standalone python library
+can be used with other web frameworks or any python based applications
+
+SQLALCHEMY still needs a database driver since it has no way to talk to a database
+psycopg is a postgres database driver
+
+SQLALCHEMY takes in python code and translates into SQL commands to be executed on a database
+Have to define a models file with code to create a table and its columns
+Have to define another file with teh name database to hold the code that will establish a connection to the 
+database using SQLALCHEMY
+
+A ORM basically abstracts SQL and allows us to perform SQL commands on a database in the form of regular python 
+
+
+SCHEMA (PYDANTIC MODEL)  VS SQLALCHEMY MODELS
+
+> schema or pydantic models define how the data passed to the api server from ther client look like
+> they also define how the response given from the api server to the client looks like
+
+>sqlalchemy models are responsible for defining the columns of posts
+> using the model created, we can perform queries on the database

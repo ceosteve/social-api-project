@@ -72,17 +72,6 @@ def root(): # path operation functions (make them as descriptive as possible)
 
 
 
-
- # SQLALCHEMY test path operation
-@app.get("/sqlalchemy")
-def test_post(db:Session=Depends(get_db)):
-    posts=db.query(models.Posts).all()
-    print(posts)
-    return{"status":posts}
-
-
-
-
 # get all posts from the api server
 @app.get("/posts")
 def get_posts(db:Session=Depends(get_db)):

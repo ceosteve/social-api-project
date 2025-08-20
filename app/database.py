@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker
 
 #databse connection string to be passed into SQLALCHEMY
 SQLALCHEMY_DATABASE_URL = "postgresql+psycopg://postgres:postgres254@localhost/fastapi"
+                        # specify that it is a psotgres database, give username, password, ip address and database name
 
 
 #create an engine responsible for sqlalchemy to connect to a postgres database
@@ -23,3 +24,5 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
