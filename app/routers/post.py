@@ -1,0 +1,103 @@
+from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
+from .. import models, schemas
+from sqlalchemy.orm import Session
+from ..database import get_db
+from typing import Optional, List
+
+
+router = APIRouter(
+    prefix="/posts"
+)  # new instance that will be out path operations 
+
+# get all posts from the api server
+@router.get("/", response_model=List[schemas.PostResponse])
+def get_posts(db:Session=Depends(get_db)):
+    posts=db.query(models.Posts).all()
+#    cursor.execute("SELECT *FROM posts")
+#    posts =cursor.fetchall()
+    
+    return posts
+ 
+
+
+# create a post in the api server using the post HTTP method
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse) # includes a status code to display that post has been created
+def create_posts(post: schemas.PostCreate, db:Session=Depends(get_db)): # this is the pydantic model that was created earlier using the BaseModel class
+#    cursor.execute(
+#        "INSERT INTO posts (title, content) VALUES (%s, %s) RETURNING *", s
+#        (post.title,post.content)
+#    )
+#    new_post = cursor.fetchone()
+#    conn.commit()
+    new_post=models.Posts(**post.dict())  #unpacked dictionary created under pydantic model
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+    return new_post # kinda like JSON format of reading information from a database
+
+
+
+ 
+# specify the status code that should be returned to the front end in case a resource
+# is unavailable in the server
+# data extracted is stored as a pydantic model and each has a method called .dict
+# use best pratices and naming conventions 
+@router.get("/{id}", response_model=schemas.PostResponse) #id field represents a path parameter
+def retrieve_post(id:int,db:Session=Depends(get_db)):
+#   cursor.execute("SELECT * FROM posts WHERE id = %s", (id,))
+#   post=cursor.fetchone()
+
+    post= db.query(models.Posts).filter(models.Posts.id==id).first() # avoid going over all entries looking for id even if it has been found
+
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                             detail=f"post with id :{id} was not found")
+    return post
+
+
+
+
+# delete a post with a specific id
+# status code 204 means that the request was successful but there is no content to return
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_post(id: int,db:Session=Depends(get_db)):
+
+#    cursor.execute("DELETE FROM posts WHERE id=%s RETURNING *", (id,))
+#    delete_post= cursor.fetchone()
+#    conn.commit()
+
+    post=db.query(models.Posts).filter(models.Posts.id==id)
+   
+    if post.first() is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"post with id {id} not found")
+
+    post.delete(synchronize_session=False)
+    db.commit()
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)  
+# No content to return after deletion
+
+
+
+
+# update a post with a specific id
+@router.put("/{id}", response_model=schemas.PostResponse)
+def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db)):
+
+#    cursor.execute("UPDATE posts SET title=%s, content=%s, published=%s WHERE id=%s RETURNING *",(post.title,post.content,post.published, (id,)))
+
+#    updated_post=cursor.fetchone()
+#    conn.commit() # save changes permanently to the database
+    
+    post_query=db.query(models.Posts).filter(models.Posts.id==id)
+    
+    updated_post = post_query.first()
+
+    if updated_post is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"post with id {id} not found")
+    
+    post_query.update(post.dict(), synchronize_session=False)
+    db.commit()
+
+    return post_query.first()  # for postman 
+    
