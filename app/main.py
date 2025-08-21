@@ -1,5 +1,8 @@
 from datetime import date, datetime
 from gettext import find
+from signal import raise_signal
+from urllib.parse import uses_relative
+from warnings import deprecated
 from fastapi import FastAPI, Response, status, HTTPException, Depends
 from fastapi.params import Body
 from typing import Optional, List
@@ -8,16 +11,16 @@ import psycopg
 from psycopg.rows import dict_row
 import time
 from sqlalchemy.orm import Session
-from . import models, schemas
+from . import models, schemas, utils
 from .database import engine, get_db
+from .routers import post, user
+
 
 models.Base.metadata.create_all(bind=engine)
 
 
 
 app = FastAPI()
-
-
 
 
 
@@ -62,122 +65,13 @@ def find_index_post(id):
         if p['id']==id:
             return i
 
-
-
+app.include_router(post.router)
+app.include_router(user.router)
 
 # path operation is basically a decorator with a specific http method and a path
 @app.get("/") # path operation (route)
 def root(): # path operation functions (make them as descriptive as possible)
     return {"message": "welcome to my api@@"} #JSON language
-
-
-
-# get all posts from the api server
-@app.get("/posts", response_model=List[schemas.PostResponse])
-def get_posts(db:Session=Depends(get_db)):
-    posts=db.query(models.Posts).all()
-#    cursor.execute("SELECT *FROM posts")
-#    posts =cursor.fetchall()
-    
-    return posts
- 
-
-
-# create a post in the api server using the post HTTP method
-@app.post("/posts", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse) # includes a status code to display that post has been created
-def create_posts(post: schemas.PostCreate, db:Session=Depends(get_db)): # this is the pydantic model that was created earlier using the BaseModel class
-#    cursor.execute(
-#        "INSERT INTO posts (title, content) VALUES (%s, %s) RETURNING *", s
-#        (post.title,post.content)
-#    )
-#    new_post = cursor.fetchone()
-#    conn.commit()
-    new_post=models.Posts(**post.dict())  #unpacked dictionary created under pydantic model
-    db.add(new_post)
-    db.commit()
-    db.refresh(new_post)
-    return new_post # kinda like JSON format of reading information from a database
-
-
-
- 
-# specify the status code that should be returned to the front end in case a resource
-# is unavailable in the server
-# data extracted is stored as a pydantic model and each has a method called .dict
-# use best pratices and naming conventions 
-@app.get("/posts/{id}", response_model=schemas.PostResponse) #id field represents a path parameter
-def retrieve_post(id:int,db:Session=Depends(get_db)):
-#   cursor.execute("SELECT * FROM posts WHERE id = %s", (id,))
-#   post=cursor.fetchone()
-
-    post= db.query(models.Posts).filter(models.Posts.id==id).first() # avoid going over all entries looking for id even if it has been found
-
-    if not post:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                             detail=f"post with id :{id} was not found")
-    return post
-
-
-
-
-# delete a post with a specific id
-# status code 204 means that the request was successful but there is no content to return
-@app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int,db:Session=Depends(get_db)):
-
-#    cursor.execute("DELETE FROM posts WHERE id=%s RETURNING *", (id,))
-#    delete_post= cursor.fetchone()
-#    conn.commit()
-
-    post=db.query(models.Posts).filter(models.Posts.id==id)
-   
-    if post.first() is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"post with id {id} not found")
-
-    post.delete(synchronize_session=False)
-    db.commit()
-
-    return Response(status_code=status.HTTP_204_NO_CONTENT)  
-# No content to return after deletion
-
-
-
-
-# update a post with a specific id
-@app.put("/posts/{id}", response_model=schemas.PostResponse)
-def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db)):
-
-#    cursor.execute("UPDATE posts SET title=%s, content=%s, published=%s WHERE id=%s RETURNING *",(post.title,post.content,post.published, (id,)))
-
-#    updated_post=cursor.fetchone()
-#    conn.commit() # save changes permanently to the database
-    
-    post_query=db.query(models.Posts).filter(models.Posts.id==id)
-    
-    updated_post = post_query.first()
-
-    if updated_post is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"post with id {id} not found")
-    
-    post_query.update(post.dict(), synchronize_session=False)
-    db.commit()
-
-    return post_query.first()  # for postman 
-    
-
-
-
-@app.post("/users", status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut) # includes a status code to display that post has been created
-def create_user(user: schemas.UserCreate, db:Session=Depends(get_db)):
-    new_user = models.User(**user.dict())
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    return new_user
-
-
-
 
 
 
