@@ -6,7 +6,8 @@ from typing import Optional, List
 
 
 router = APIRouter(
-    prefix="/posts"
+    prefix="/posts",
+    tags=['posts']
 )  # new instance that will be out path operations 
 
 # get all posts from the api server
