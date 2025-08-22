@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
 from .. import models, schemas, utils
 from sqlalchemy.orm import Session
@@ -5,7 +6,8 @@ from ..database import get_db
 
 
 router = APIRouter(
-    prefix="/users"
+    prefix="/users",
+    tags=['users']
 )
 
 #create users in the database
@@ -33,7 +35,7 @@ def get_user(id:int,db:Session=Depends(get_db)):
     
     return user
 
-@router.get("/users", response_model=schemas.UserOut)
+@router.get("/", response_model=List[schemas.UserOut])
 def get_users(db:Session=Depends(get_db)):
     all_users=db.query(models.User).all()
 
