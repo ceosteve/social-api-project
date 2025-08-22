@@ -38,14 +38,19 @@ class PostResponse(PostBase):
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
+   
 
 
 # user response model, what data shoud users get back when they create an account
 class UserOut(BaseModel):
     id: int
     email: EmailStr
+    created_at: datetime
     class Config:
         from_attributes = True  # convert from sqlalchemy model to a regular pydantic model
 
 
-
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+    
