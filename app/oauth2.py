@@ -1,7 +1,4 @@
-from email import header
-import secrets
-from tarfile import data_filter
-from xml.dom import minicompat
+
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from . import schemas, database, models
@@ -35,39 +32,30 @@ def create_access_token(data:dict):
 
     return encoded_jwt
 
-
-#def verify_access_token(token:str, credentials_exception):
-    
+def verify_access_token(token: str, credentials_exception):
     try:
-        payload=jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-
-        user_id:str=payload.get("user_id")
-
-        if user_id is None:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        id: str = payload.get("user_id")
+        if id is None:
             raise credentials_exception
-        token_data = schemas.TokenData()
+        token_data = schemas.TokenData()  # ✅ pass id here
     except JWTError:
         raise credentials_exception
-    
     return token_data
-
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail="Could not verify credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("user_id")
-        if user_id is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
 
-    user = db.query(models.User).filter(models.User.id == user_id).first()
-    if user is None:
+    token_data = verify_access_token(token, credentials_exception)
+
+    user = db.query(models.User).filter(models.User.id == token_data.id).first()
+    if not user:
         raise credentials_exception
     return user
+
+
