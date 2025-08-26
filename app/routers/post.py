@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
-from .. import models, schemas
+from .. import models, schemas, oauth2
 from sqlalchemy.orm import Session
 from ..database import get_db
 from typing import Optional, List
@@ -12,7 +12,7 @@ router = APIRouter(
 
 # get all posts from the api server
 @router.get("/", response_model=List[schemas.PostResponse])
-def get_posts(db:Session=Depends(get_db)):
+def get_posts(db:Session=Depends(get_db),current_user:int =Depends(oauth2.get_current_user)):
     posts=db.query(models.Posts).all()
 #    cursor.execute("SELECT *FROM posts")
 #    posts =cursor.fetchall()
@@ -23,13 +23,14 @@ def get_posts(db:Session=Depends(get_db)):
 
 # create a post in the api server using the post HTTP method
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse) # includes a status code to display that post has been created
-def create_posts(post: schemas.PostCreate, db:Session=Depends(get_db)): # this is the pydantic model that was created earlier using the BaseModel class
+def create_posts(post: schemas.PostCreate, db:Session=Depends(get_db), current_user:int =Depends(oauth2.get_current_user)): # this is the pydantic model that was created earlier using the BaseModel class
 #    cursor.execute(
 #        "INSERT INTO posts (title, content) VALUES (%s, %s) RETURNING *", s
 #        (post.title,post.content)
 #    )
 #    new_post = cursor.fetchone()
-#    conn.commit()
+#    conn.commit()s
+    print(current_user)
     new_post=models.Posts(**post.dict())  #unpacked dictionary created under pydantic model
     db.add(new_post)
     db.commit()
@@ -61,7 +62,7 @@ def retrieve_post(id:int,db:Session=Depends(get_db)):
 # delete a post with a specific id
 # status code 204 means that the request was successful but there is no content to return
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int,db:Session=Depends(get_db)):
+def delete_post(id: int,db:Session=Depends(get_db),current_user:int =Depends(oauth2.get_current_user)):
 
 #    cursor.execute("DELETE FROM posts WHERE id=%s RETURNING *", (id,))
 #    delete_post= cursor.fetchone()
@@ -83,7 +84,7 @@ def delete_post(id: int,db:Session=Depends(get_db)):
 
 # update a post with a specific id
 @router.put("/{id}", response_model=schemas.PostResponse)
-def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db)):
+def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db),current_user:int =Depends(oauth2.get_current_user)):
 
 #    cursor.execute("UPDATE posts SET title=%s, content=%s, published=%s WHERE id=%s RETURNING *",(post.title,post.content,post.published, (id,)))
 
