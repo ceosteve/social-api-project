@@ -30,8 +30,7 @@ def create_posts(post: schemas.PostCreate, db:Session=Depends(get_db), current_u
 #    )
 #    new_post = cursor.fetchone()
 #    conn.commit()s
-    print(current_user)
-    new_post=models.Posts(**post.dict())  #unpacked dictionary created under pydantic model
+    new_post=models.Posts(owner_id=current_user.id,**post.dict())  #unpacked dictionary created under pydantic model
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
