@@ -1,7 +1,9 @@
+import http
 import sys
 
 import sqlalchemy
 
+from app import oauth2
 from app.database import SQLALCHEMY_DATABASE_URL, SessionLocal
 from gitignore import my_own
 print("Python executable in use:", sys.executable)
@@ -13,23 +15,26 @@ except ImportError:
     print("FastAPI is NOT installed in this environment")
 
 
-
-
-
 from operator import index
 from random import randrange
 from turtle import pos
 from typing import Optional
 from pydantic import BaseModel
-from fastapi import FastAPI, status, HTTPException, Depends, Response
+from fastapi import FastAPI, status, HTTPException, Depends, Response, APIRouter
 import psycopg
 from psycopg.rows import dict_row
 import time
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.ext.declarative import declarative_base
+from app import schemas, models, utils
+from sqlalchemy import Column, String, Boolean, CHAR, Integer
+from datetime import datetime, timedelta
 
 
 app = FastAPI()
 
-
+router = APIRouter()
 class Post(BaseModel):
     title: str
     content: str
@@ -96,6 +101,8 @@ def create_post(post:Post):
 
     return{f"post created":new_post}
 
+
+
 @app.put("posts/{id}")
 def update_post(id:int, post:Post):
     cursor.execute("UPDATE posts SET title=%s, content=%s WHERE id=%s RETURNING*",(post.title, post.content,(id,)))
@@ -121,10 +128,7 @@ def delete_post(id:int):
 
 
 
-# creating a database connection using sqlalechmy
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.ext.declarative import declarative_base
+# defining how the database will be set up using SQLALCHEMY
 
 SQLALCHEMY_DATABASE_URL = "postgres+psycopg://postgres:postgres@254localhost/fastapi"
 
@@ -136,10 +140,16 @@ SessionLocal = sessionmaker(autoconnect=False, autoflush=False, bind=engine)
 Base= declarative_base()
 
 
+def get_db():
+    db= SessionLocal
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+
 #creating database models using sqlalchemy
-
-from sqlalchemy import Column, String, Boolean, CHAR, Integer
-
 class Pets(Base):
     __tablename__= "current pets"
 
@@ -148,9 +158,47 @@ class Pets(Base):
     number = Column("number", Integer, nullable = False)
 
 
-@app.get("/pets")
+#path operation function
+@app.get("/pets",status_code=status.HTTP_200_OK)
 def get_posts(db:Session= Depends(get_post)):
     pets=db.query(Pets).all()
     return{"data": pets}
 
+
+
+#path operation to create new user in the database
+@app.post("/users",status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut)
+def create_user(user:schemas.UserCreate, db:Session=Depends(get_db)):
+    new_user=models.User(user.dict())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return new_user
+
+
+# end point to create a jwt token by the api
+def create_token(data:dict):
+    to_encode=data.copy()
+    expire = datetime.now() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp":expire})
+    encoded_jwt_token =jwt.encode(to_encode,SECRET_KEY,ALGORITHM)
+
+    return encoded_jwt_token
+
+
+# endpoint to login and get a jwt access token from the api
+@router.post("/login")
+def login(user_credentials: schemas.UserLogin, db:Session=Depends(get_db)):
+    user=db.query(models.User).filter(models.User.email==user_credentials.email).first()
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"invalid login details")
+
+    if not utils.verify(user_credentials.password, user.password):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"invalid login credentials")
+    
+    access_token = oauth2.create_access_token(data={"user_id":user.id})
+    
+    return access_token
 
