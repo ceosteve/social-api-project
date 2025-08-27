@@ -38,7 +38,7 @@ def verify_access_token(token: str, credentials_exception):
         id: str = payload.get("user_id")
         if id is None:
             raise credentials_exception
-        token_data = schemas.TokenData()  # ✅ pass id here
+        token_data = schemas.TokenData(id=id)  # ✅ pass id here
     except JWTError:
         raise credentials_exception
     return token_data
