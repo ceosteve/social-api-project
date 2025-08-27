@@ -1,4 +1,4 @@
-from threading import currentThread
+
 from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
 from .. import models, schemas, oauth2
 from sqlalchemy.orm import Session
@@ -13,10 +13,14 @@ router = APIRouter(
 
 # get all posts from the api server
 @router.get("/", response_model=List[schemas.PostResponse])
-def get_posts(db:Session=Depends(get_db),current_user:int =Depends(oauth2.get_current_user)):
-    posts = db.query(models.Posts).all()
+def get_posts(db:Session=Depends(get_db),current_user:int =Depends(oauth2.get_current_user),
+              limit:int=10, skip:int=0, search:Optional[str]=""):
+    
+    posts = db.query(models.Posts).filter(
+        models.Posts.content.contains(search)).limit(limit).offset(skip).all()
   
   # if you want to access posts by a specific user
+
   #  posts=db.query(models.Posts).filter(
     #    models.Posts.owner_id==current_user.id)
     
@@ -56,7 +60,6 @@ def retrieve_post(id:int,db:Session=Depends(get_db), current_user: int= Depends(
 
     post= db.query(models.Posts).filter(models.Posts.id==id).first() # avoid going over all entries looking for id even if it has been found
 
-    
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                              detail=f"post with id :{id} was not found")
