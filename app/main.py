@@ -24,7 +24,7 @@ app = FastAPI()
 
 
 
-# block of code to connect to the database on the local machine 
+# block of code to connect to the database on the local machine using SQL
 while True:
     try:  
         conn = psycopg.connect("dbname=fastapi user=postgres password=postgres254 host=localhost")
@@ -49,7 +49,6 @@ my_posts = [
 
 
 
-
 def find_post(id):
     for p in my_posts:
         if p['id'] == id:
@@ -64,6 +63,8 @@ def find_index_post(id):
     for i, p in enumerate(my_posts):
         if p['id']==id:
             return i
+
+
 
 app.include_router(post.router)
 app.include_router(user.router)

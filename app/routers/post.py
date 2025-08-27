@@ -1,3 +1,4 @@
+from threading import currentThread
 from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
 from .. import models, schemas, oauth2
 from sqlalchemy.orm import Session
@@ -13,7 +14,12 @@ router = APIRouter(
 # get all posts from the api server
 @router.get("/", response_model=List[schemas.PostResponse])
 def get_posts(db:Session=Depends(get_db),current_user:int =Depends(oauth2.get_current_user)):
-    posts=db.query(models.Posts).all()
+    posts = db.query(models.Posts).all()
+  
+  # if you want to access posts by a specific user
+  #  posts=db.query(models.Posts).filter(
+    #    models.Posts.owner_id==current_user.id)
+    
 #    cursor.execute("SELECT *FROM posts")
 #    posts =cursor.fetchall()
     
@@ -44,15 +50,21 @@ def create_posts(post: schemas.PostCreate, db:Session=Depends(get_db), current_u
 # data extracted is stored as a pydantic model and each has a method called .dict
 # use best pratices and naming conventions 
 @router.get("/{id}", response_model=schemas.PostResponse) #id field represents a path parameter
-def retrieve_post(id:int,db:Session=Depends(get_db)):
+def retrieve_post(id:int,db:Session=Depends(get_db), current_user: int= Depends(oauth2.get_current_user)):
 #   cursor.execute("SELECT * FROM posts WHERE id = %s", (id,))
 #   post=cursor.fetchone()
 
     post= db.query(models.Posts).filter(models.Posts.id==id).first() # avoid going over all entries looking for id even if it has been found
 
+    
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                              detail=f"post with id :{id} was not found")
+    
+    # if you want to retrieve posts by a specific owner id
+  #  if post.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform this action")
+    
     return post
 
 
@@ -67,12 +79,17 @@ def delete_post(id: int,db:Session=Depends(get_db),current_user:int =Depends(oau
 #    delete_post= cursor.fetchone()
 #    conn.commit()
 
-    post=db.query(models.Posts).filter(models.Posts.id==id)
+    post_query=db.query(models.Posts).filter(models.Posts.id==id)
    
-    if post.first() is None:
+    post = post_query.first()
+
+    if post is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"post with id {id} not found")
 
-    post.delete(synchronize_session=False)
+    if post.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform this action")
+    
+    post_query.delete(synchronize_session=False)
     db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)  
@@ -90,15 +107,26 @@ def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db),cu
 #    updated_post=cursor.fetchone()
 #    conn.commit() # save changes permanently to the database
     
-    post_query=db.query(models.Posts).filter(models.Posts.id==id)
-    
-    updated_post = post_query.first()
+     post_query = db.query(models.Posts).filter(models.Posts.id == id)
 
-    if updated_post is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"post with id {id} not found")
-    
-    post_query.update(post.dict(), synchronize_session=False)
-    db.commit()
+     updated_post = post_query.first()
 
-    return post_query.first()  # for postman 
+     if updated_post is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=f"post with id {id} not found"
+        )
+
+     if updated_post.owner_id != current_user.id:
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to perform this action"
+        )
+
+    # ✅ Use dict() from the Pydantic schema
+     post_query.update(post.dict(), synchronize_session=False)
+     db.commit()
+
+     return post_query.first()  # for postman 
     

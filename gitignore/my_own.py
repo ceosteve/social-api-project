@@ -30,7 +30,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from app import schemas, models, utils
 from sqlalchemy import Column, String, Boolean, CHAR, Integer
 from datetime import datetime, timedelta
-
+from jose import jwt, JWTError
+from ..app.oauth2 import SECRET_KEY, ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM
 
 app = FastAPI()
 
@@ -177,6 +178,7 @@ def create_user(user:schemas.UserCreate, db:Session=Depends(get_db)):
     return new_user
 
 
+
 # end point to create a jwt token by the api
 def create_token(data:dict):
     to_encode=data.copy()
@@ -202,3 +204,5 @@ def login(user_credentials: schemas.UserLogin, db:Session=Depends(get_db)):
     
     return access_token
 
+
+# function to verfy that the jwt token created at the point of login is valid 
