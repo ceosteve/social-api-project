@@ -23,12 +23,20 @@ class PostCreate(PostBase):
     pass
 
 
+# user response model, what data shoud users get back when they create an account
+class UserOut(BaseModel):
+    id: int
+    email: EmailStr
+    created_at: datetime
+    class Config:
+        from_attributes = True  # convert from sqlalchemy model to a regular pydantic model
 
  #post response model
 class PostResponse(PostBase):
     id: int
     created_at: datetime
     owner_id : int
+    owner: UserOut
 
     class Config:
       from_attributes = True
@@ -41,16 +49,6 @@ class UserCreate(BaseModel):
     password: str
    
 
-
-# user response model, what data shoud users get back when they create an account
-class UserOut(BaseModel):
-    id: int
-    email: EmailStr
-    created_at: datetime
-    class Config:
-        from_attributes = True  # convert from sqlalchemy model to a regular pydantic model
-
-
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
@@ -61,4 +59,4 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    id: Optional[str] = None
+    id: Optional[int] = None
