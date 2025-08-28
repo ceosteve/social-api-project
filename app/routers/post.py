@@ -22,6 +22,10 @@ def get_posts(
     search: Optional[str] = ""
 ):
     
+   # posts = db.query(models.Posts).filter(
+      #  models.Posts.content.contains(search)).limit(limit).offset(skip).all()
+    
+    
     results = db.query(
         models.Posts, func.count(models.Votes.post_id).label("votes")
     ).join(
@@ -76,6 +80,10 @@ def retrieve_post(id:int,db:Session=Depends(get_db), current_user: int= Depends(
 
     post= db.query(models.Posts).filter(models.Posts.id==id).first() # avoid going over all entries looking for id even if it has been found
 
+    #results = db.query(models.Posts, func.count(models.Votes.post_id).label("Votes")).join(
+       # models.Votes, models.Votes.post_id==models.Posts.id, isouter=True
+       # ).group_by(models.Posts.id).filter(models.Posts.id==id).first()
+    
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                              detail=f"post with id :{id} was not found")
@@ -83,9 +91,7 @@ def retrieve_post(id:int,db:Session=Depends(get_db), current_user: int= Depends(
     # if you want to retrieve posts by a specific owner id
   #  if post.owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform this action")
-    
     return post
-
 
 
 
