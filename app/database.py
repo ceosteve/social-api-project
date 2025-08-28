@@ -5,10 +5,12 @@ import psycopg
 from psycopg.rows import dict_row
 import time
 from .config import settings
+
+
 #databse connection string to be passed into SQLALCHEMY
 SQLALCHEMY_DATABASE_URL = f"postgresql+psycopg://{settings.database_username}:{
     settings.database_password}@{settings.database_hostname}:{settings.database_port}/{settings.database_name}"
-                        # specify that it is a psotgres database, give username, password, ip address and database name
+                        # specify that it is a postgres database, give username, password, ip address and database name
 
 
 #create an engine responsible for sqlalchemy to connect to a postgres database
