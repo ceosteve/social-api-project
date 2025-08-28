@@ -43,6 +43,11 @@ class PostResponse(PostBase):
     class Config:
       from_attributes = True
 
+class PostOut(BaseModel):
+    Post: PostResponse
+    votes: int
+    class Config:
+        from_attributes = True
 
 #schema to define the data a user provides when they send a request
 # this is a pydantic model so it has to inherit from the BaseModel
