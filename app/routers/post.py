@@ -4,6 +4,7 @@ from .. import models, schemas, oauth2
 from sqlalchemy.orm import Session
 from ..database import get_db
 from typing import Optional, List
+from sqlalchemy import func
 
 
 router = APIRouter(
@@ -12,13 +13,26 @@ router = APIRouter(
 )  # new instance that will be out path operations 
 
 # get all posts from the api server
-@router.get("/", response_model=List[schemas.PostResponse])
-def get_posts(db:Session=Depends(get_db),current_user:int =Depends(oauth2.get_current_user),
-              limit:int=10, skip:int=0, search:Optional[str]=""):
+@router.get("/", response_model=List[schemas.PostOut])
+def get_posts(
+    db: Session = Depends(get_db),
+    current_user: int = Depends(oauth2.get_current_user),
+    limit: int = 10,
+    skip: int = 0,
+    search: Optional[str] = ""
+):
     
-    posts = db.query(models.Posts).filter(
-        models.Posts.content.contains(search)).limit(limit).offset(skip).all()
-  
+    results = db.query(
+        models.Posts, func.count(models.Votes.post_id).label("votes")
+    ).join(
+        models.Votes, models.Votes.post_id == models.Posts.id, isouter=True
+    ).group_by(
+        models.Posts.id
+    ).filter(
+        models.Posts.content.contains(search)
+    ).limit(limit).offset(skip).all()
+
+    
   # if you want to access posts by a specific user
 
   #  posts=db.query(models.Posts).filter(
@@ -26,8 +40,10 @@ def get_posts(db:Session=Depends(get_db),current_user:int =Depends(oauth2.get_cu
     
 #    cursor.execute("SELECT *FROM posts")
 #    posts =cursor.fetchall()
-    
-    return posts
+
+    # transform each tuple into dict matching PostOut schema
+    return [{"Post": post, "votes": votes} for post, votes in results]
+
  
 
 
