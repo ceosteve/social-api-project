@@ -7,7 +7,7 @@ import time
 from .config import settings
 
 
-#databse connection string to be passed into SQLALCHEMY
+#database connection string to be passed into SQLALCHEMY
 SQLALCHEMY_DATABASE_URL = f"postgresql+psycopg://{settings.database_username}:{
     settings.database_password}@{settings.database_hostname}:{settings.database_port}/{settings.database_name}"
                         # specify that it is a postgres database, give username, password, ip address and database name
@@ -32,18 +32,5 @@ def get_db():
         db.close()
 
 
-# block of code to connect to the database on the local machine using SQL
-# 
-#while True:
-#    try:  
-#        conn = psycopg.connect("dbname=fastapi user=postgres password=postgres254 host=localhost")
-       
-#        cursor= conn.cursor(row_factory=dict_row) # to execute SQL statements
- #      print("Database connection successful")
-#        break
 
-#    except Exception as error:
-#        print("Database connection failed")
-#        print("error", error)
-#        time.sleep(3)
     
