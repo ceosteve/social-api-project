@@ -22,8 +22,8 @@ def get_posts(
     search: Optional[str] = ""
 ):
     
-   # posts = db.query(models.Posts).filter(
-      #  models.Posts.content.contains(search)).limit(limit).offset(skip).all()
+    # posts = db.query(models.Posts).filter(
+      # models.Posts.content.contains(search)).limit(limit).offset(skip).all()
     
     
     results = db.query(

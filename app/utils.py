@@ -1,3 +1,4 @@
+
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"],deprecated="auto") #telling passlib what is the hashing algorithims

@@ -1,4 +1,4 @@
-
+# this is a special class (BaseSettings) that automatically loads values from environment variables like .env files into python attributes
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
@@ -12,6 +12,6 @@ class Settings(BaseSettings):
     access_token_expiration_time: int
 
     class Config:
-        env_file = ".env"
+        env_file = ".env" # load a file names .env from the project directory
 
 settings = Settings()

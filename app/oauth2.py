@@ -12,8 +12,6 @@ from .config import settings
 oauth2_scheme = OAuth2PasswordBearer("login")
 
 
-
-
 # this handles the logic of creating JWT tokens
 # secret key
 # algorithm we want to use

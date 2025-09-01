@@ -13,8 +13,8 @@ from .config import settings
 
 app = FastAPI()
 
-# allowing requests from google.com to talk to our api
-origins = ["https://www.google.com"]
+# allowing requests from sepcific domains to talk to our api
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
