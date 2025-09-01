@@ -33,8 +33,7 @@ app.include_router(votes.router)
 # path operation is basically a decorator with a specific http method and a path
 @app.get("/") # path operation (route)
 def root(): # path operation functions (make them as descriptive as possible)
-    return {"message": "hello world"} #JSON language
-
+    return {"message": "hello"} #JSON language
 
 
 
