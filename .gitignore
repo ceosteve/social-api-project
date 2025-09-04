@@ -1,5 +1,24 @@
-__pycache__
-venv
-.env
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.env/
+
+# IDE/project files
+.idea/
+.vscode/
+*.swp
+
+#learning files
+trials.py
+my_own.py
 learning.txt
-trials.txt
+
+
+#arbitrary test files
+test_calculations.py
+calculations.py
