@@ -1,28 +1,27 @@
 name: Build and Deploy Code
-
 on: [push, pull_request]
 
 jobs:
   job1:
     environment:
       name: Testing
-    env: 
-      DATABASE_HOSTNAME: ${{ secrets.DATABASE_HOSTNAME }}
-      DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
-      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-      DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
-      DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
-      SECRET_KEY: ${{ secrets.SECRET_KEY }}
-      ALGORITHM: ${{ secrets.ALGORITHM }}
-      ACCESS_TOKEN_EXPIRATION_TIME: ${{ secrets.ACCESS_TOKEN_EXPIRATION_TIME }}
-      
+    env:
+      DATABASE_HOSTNAME: ${{secrets.DATABASE_HOSTNAME}}
+      DATABASE_PORT: ${{secrets.DATABASE_PORT}}
+      DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
+      DATABASE_NAME: ${{secrets.DATABASE_NAME}}
+      DATABASE_USERNAME: ${{secrets.DATABASE_USERNAME}}
+      SECRET_KEY: ${{secrets.SECRET_KEU}}
+      ALGORITHM: ${{secrets.ALGORITHM}}
+      ACCESS_TOKEN_EXPIRATION_TIME: ${{secrets.ACCESS_TOKEN_EXPIRATION_TIME}}
+
     services:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USER: ${{secrets.DATABASE_USERNAME}}
-          POSTGRES_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-          POSTGRES_DB: ${{secrets.DATABASE_NAME }}_test
+          POSTGRES_USERNAME: ${{secrets.DATABASE_USERNAME}}
+          POSTGRES_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
+          POSTGRES_DATABASE: ${{secrets.DATABASE_HOSTNAME}}
         ports:
           - 5432:5432
         options: >-
@@ -33,21 +32,23 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-      - name: Pulling git repo
+      - name: pull git repo
         uses: actions/checkout@v2
-
-      - name: Install python version 3.13.7
+      
+      - name: Install python 3.13.7
         uses: actions/setup-python@v2
         with:
           python-version: "3.13.7"
-
       - name: Update pip
-        run: python -m pip install --upgrade pip
+        run: pip -m install pip --upgrade pip
       
-      - name: Install all dependencies
+      - name: install dependencies
         run: pip install -r requirements.txt
-
-      - name: test with pytest
+      
+      - name: Install pytest and run tests
         run: |
          pip install pytest pytest-asyncio pytest-cov
          pytest -v -s --maxfail=1 --disable-warnings
+      
+
+
