@@ -17,8 +17,8 @@ jobs:
       ACCESS_TOKEN_EXPIRATION_TIME: ${{ secrets.ACCESS_TOKEN_EXPIRATION_TIME }}
       
     services:
-      posgres:
-        image: postgres
+      postgres:
+        image: postgres:15
         env:
           POSTGRES_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
           POSTGRES_DB: ${{secrets.DATABASE_NAME }}_Test
@@ -30,7 +30,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Pulling git repo
         uses: actions/checkout@v2
