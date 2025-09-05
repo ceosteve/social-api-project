@@ -40,10 +40,10 @@ jobs:
         with:
           python-version: "3.13.7"
       - name: Update pip
-        run: pip -m install pip --upgrade pip
+        run: python -m install pip --upgrade pip
       
       - name: install dependencies
-        run: python install -r requirements.txt
+        run: pip install -r requirements.txt
       
       - name: Install pytest and run tests
         run: |
