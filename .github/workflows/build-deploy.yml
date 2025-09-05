@@ -11,7 +11,7 @@ jobs:
       DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
       DATABASE_NAME: ${{secrets.DATABASE_NAME}}
       DATABASE_USERNAME: ${{secrets.DATABASE_USERNAME}}
-      SECRET_KEY: ${{secrets.SECRET_KEU}}
+      SECRET_KEY: ${{secrets.SECRET_KEY}}
       ALGORITHM: ${{secrets.ALGORITHM}}
       ACCESS_TOKEN_EXPIRATION_TIME: ${{secrets.ACCESS_TOKEN_EXPIRATION_TIME}}
 
@@ -19,9 +19,9 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USERNAME: ${{secrets.DATABASE_USERNAME}}
+          POSTGRES_USER: ${{secrets.DATABASE_USERNAME}}
           POSTGRES_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
-          POSTGRES_DATABASE: ${{secrets.DATABASE_HOSTNAME}}
+          POSTGRES_DB: ${{secrets.DATABASE_HOSTNAME}}
         ports:
           - 5432:5432
         options: >-
