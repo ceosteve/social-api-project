@@ -48,5 +48,5 @@ jobs:
 
       - name: test with pytest
         run: |
-         pip install pytest
-         pytest
+         pip install pytest pytest-asyncio pytest-cov
+         pytest -v -s --maxfail=1 --disable-warnings
