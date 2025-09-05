@@ -15,7 +15,7 @@ jobs:
           python-version: "3.13.7"
 
       - name: Update pip
-        run: python -m pip install --uprade pip
+        run: python -m pip install --upgrade pip
       
       - name: Install all dependencies
         run: pip install -r requirements.txt
