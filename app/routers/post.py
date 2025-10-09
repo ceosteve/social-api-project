@@ -1,5 +1,9 @@
 
 from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
+
+from app.cache import cache_get, cache_set
+
+
 from .. import models, schemas, oauth2
 from sqlalchemy.orm import Session
 from ..database import get_db
@@ -10,21 +14,22 @@ from sqlalchemy import func
 router = APIRouter(
     prefix="/posts",
     tags=['posts']
-)  # new instance that will be out path operations 
+) 
 
 # get all posts from the api server
 @router.get("/", response_model=List[schemas.PostOut])
-def get_posts(
+async def get_posts(
     db: Session = Depends(get_db),
     current_user: int = Depends(oauth2.get_current_user),
     limit: int = 10,
     skip: int = 0,
-    search: Optional[str] = ""
-):
+    search: Optional[str] = ""):
     
-    # posts = db.query(models.Posts).filter(
-      # models.Posts.content.contains(search)).limit(limit).offset(skip).all()
-    
+    cache_key = f"posts:{skip}:{limit}:{search or "all"}"
+
+    cached_posts = await cache_get(cache_key)
+    if cached_posts:
+        return cached_posts
     
     results = db.query(
         models.Posts, func.count(models.Votes.post_id).label("votes")
@@ -36,43 +41,28 @@ def get_posts(
         models.Posts.content.contains(search)
     ).limit(limit).offset(skip).all()
 
-    
-  # if you want to access posts by a specific user
-
-  #  posts=db.query(models.Posts).filter(
-    #    models.Posts.owner_id==current_user.id)
-    
-#    cursor.execute("SELECT *FROM posts")
-#    posts =cursor.fetchall()
 
     # transform each tuple into dict matching PostOut schema
-    return [{"Post": post, "votes": votes} for post, votes in results]
+    return [{"Post":post, "votes":vote} for post, vote in results]
+
 
  
 
 
-# create a post in the api server using the post HTTP method
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse) # includes a status code to display that post has been created
-def create_posts(post: schemas.PostCreate, db:Session=Depends(get_db), current_user:int =Depends(oauth2.get_current_user)): # this is the pydantic model that was created earlier using the BaseModel class
-#    cursor.execute(
-#        "INSERT INTO posts (title, content) VALUES (%s, %s) RETURNING *", s
-#        (post.title,post.content)
-#    )
-#    new_post = cursor.fetchone()
-#    conn.commit()s
-    new_post=models.Posts(owner_id=current_user.id,**post.dict())  #unpacked dictionary created under pydantic model
-    db.add(new_post)
+# create a post in the api server
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=list[schemas.PostResponse]) 
+def create_posts(posts: List[schemas.PostCreate], db:Session=Depends(get_db), current_user:int =Depends(oauth2.get_current_user)):
+
+    new_posts=[models.Posts(owner_id=current_user.id,**post.dict()) for post in posts ]
+    db.add_all(new_posts)
     db.commit()
-    db.refresh(new_post)
-    return new_post # kinda like JSON format of reading information from a database
 
-
+    for post in new_posts:
+        db.refresh(post)
+    return new_posts 
 
  
-# specify the status code that should be returned to the front end in case a resource
-# is unavailable in the server
-# data extracted is stored as a pydantic model and each has a method called .dict
-# use best pratices and naming conventions 
+#   get post by id
 @router.get("/{id}", response_model=schemas.PostResponse) #id field represents a path parameter
 def retrieve_post(id:int,db:Session=Depends(get_db), current_user: int= Depends(oauth2.get_current_user)):
 #   cursor.execute("SELECT * FROM posts WHERE id = %s", (id,))
