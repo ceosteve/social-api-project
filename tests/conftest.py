@@ -17,6 +17,7 @@ from alembic import command
 SQLALCHEMY_DATABASE_URL = "postgresql+psycopg://postgres:postgres254@localhost:5432/fastapi_test"
 #SQLALCHEMY_DATABASE_URL = f"postgresql+psycopg://{settings.database_username}:{
 #    settings.database_password}@{settings.database_hostname}:{settings.database_port}/{settings.database_name}"
+                       
                         # specify that it is a postgres database, give username, password, ip address and database name
 
 
@@ -94,7 +95,6 @@ def authorized_client(client,token):
         "Authorization":f"Bearer {token}"
     }
     return client
-
 
 @pytest.fixture
 def test_posts(test_user, session, test_user2):
