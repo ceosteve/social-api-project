@@ -22,3 +22,7 @@ learning.txt
 #arbitrary test files
 test_calculations.py
 calculations.py
+
+*.env
+
+*.ini
