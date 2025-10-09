@@ -36,7 +36,7 @@ def test_delete_vote(authorized_client, test_posts, test_vote):
 
 
 def test_delete_nonexistent_vote(authorized_client, test_posts):
-    result=authorized_client.post("/vote/",json={"post_id":test_posts[2].id, "dir":0})
+    result=authorized_client.post("/vote/",json={"post_id":test_posts[3].id, "dir":0})
     
     assert result.status_code == 404
 
@@ -50,5 +50,3 @@ def test_unauthorized_user_vote(client, test_posts):
     result=client.post("/vote/",json={"post_id":test_posts[2].id, "dir":1})
 
     assert result.status_code == 401
-
-    
