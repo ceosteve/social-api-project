@@ -23,7 +23,7 @@ async def cache_get(key:str):
     data = await redis.get(key)
     await redis.close()
     
-    return await json.loads(data) if data else None
+    return json.loads(data) if data else None
 
 """clear cache"""
 async def cache_clear(key:str):
