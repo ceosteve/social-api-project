@@ -1,17 +1,32 @@
-
+import atexit
+from contextlib import asynccontextmanager
+import logging
+from xml.sax import handler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from . import models
-from .database import engine
+
 from .routers import post, user, auth, votes
-from .config import settings
+
+from app.logging_config import setup_config
+from app.logging_middleware import LoggingMiddleware
 
 
-# no longer need this command since we have alembic which is handling the creation of sqlalchemy models in our database
-#models.Base.metadata.create_all(bind=engine)
+
+logger = setup_config()
+
+for handlers in logger.handlers:
+    handler.flush()
 
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app:FastAPI):
+    logger.info("Application starting up")
+    yield
+    logger.info("Application shutting downs")
+
+app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(LoggingMiddleware)
 
 # allowing requests from sepcific domains to talk to our api
 origins = ["*"]
