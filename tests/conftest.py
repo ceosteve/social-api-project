@@ -15,10 +15,7 @@ from alembic import command
 
 # creating a database connecton to the testing database which is different from our development database
 SQLALCHEMY_DATABASE_URL = "postgresql+psycopg://postgres:postgres254@localhost:5432/fastapi_test"
-#SQLALCHEMY_DATABASE_URL = f"postgresql+psycopg://{settings.database_username}:{
-#    settings.database_password}@{settings.database_hostname}:{settings.database_port}/{settings.database_name}"
-                       
-                        # specify that it is a postgres database, give username, password, ip address and database name
+
 
 
 #create an engine responsible for sqlalchemy to connect to a postgres database
