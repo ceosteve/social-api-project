@@ -1,5 +1,6 @@
 
 import hashlib
+import logging
 from fastapi import FastAPI, Request, Response, status, HTTPException, Depends, APIRouter
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -14,6 +15,7 @@ from ..database import get_db
 from typing import Optional, List
 from sqlalchemy import func
 
+logger = logging.getLogger("socialapi")
 
 router = APIRouter(
     prefix="/posts",
@@ -33,9 +35,11 @@ async def get_posts(
     
     cache_key = make_cache_key(request)
 
-    cached_posts = await cache_get(cache_key)
+    logger.info(f"User fetching posts with params limit={limit}, skip={skip}, search='{search}'")
 
+    cached_posts = await cache_get(cache_key)
     if cached_posts:
+        logger.info(f"Cache HIT for key={cache_key}")
         body = json.dumps(cached_posts,sort_keys=True)
         etag = hashlib.md5(body.encode()).hexdigest()
         last_modified = datetime.utcnow().strftime("%a, %d %m %Y %H:%M:%S GMT")
@@ -81,7 +85,6 @@ async def get_posts(
     response.headers ["ETag"] = etag
     response.headers["Last-Modified"] = last_modified
 
-    
     return response
 
 
@@ -124,7 +127,7 @@ def retrieve_post(id:int,db:Session=Depends(get_db), current_user: int= Depends(
 
 # delete a post with a specific id
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int,db:Session=Depends(get_db),current_user:int =Depends(oauth2.get_current_user)):
+async def delete_post(id: int,db:Session=Depends(get_db),current_user:int =Depends(oauth2.get_current_user)):
 
 
     post_query=db.query(models.Posts).filter(models.Posts.id==id)
@@ -140,9 +143,9 @@ def delete_post(id: int,db:Session=Depends(get_db),current_user:int =Depends(oau
     post_query.delete(synchronize_session=False)
     db.commit()
 
+    await cache_clear_pattern("cache:/posts")
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)  
-
-
 
 
 
