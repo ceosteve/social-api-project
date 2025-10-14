@@ -26,3 +26,4 @@ calculations.py
 *.env
 
 *.ini
+*.log
