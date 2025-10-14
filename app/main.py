@@ -29,10 +29,10 @@ app.include_router(user.router)
 app.include_router(auth.router)
 app.include_router(votes.router)
 
-# path operation is basically a decorator with a specific http method and a path
-@app.get("/") # path operation (route)
-def root(): # path operation functions (make them as descriptive as possible)
-    return {"message": "hello"} #JSON language
 
+
+@app.get("/")
+def root(): 
+    return {"message": "hello"} 
 
 
