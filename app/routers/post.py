@@ -1,8 +1,12 @@
 
-from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
-
-from app.cache import cache_get, cache_set
-
+import hashlib
+from fastapi import FastAPI, Request, Response, status, HTTPException, Depends, APIRouter
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+from datetime import datetime
+from app.cache import cache_clear_pattern, cache_get, cache_set
+from app.utils import make_cache_key
+import json
 
 from .. import models, schemas, oauth2
 from sqlalchemy.orm import Session
@@ -16,20 +20,36 @@ router = APIRouter(
     tags=['posts']
 ) 
 
+
 # get all posts from the api server
 @router.get("/", response_model=List[schemas.PostOut])
 async def get_posts(
+    request:Request,
     db: Session = Depends(get_db),
     current_user: int = Depends(oauth2.get_current_user),
     limit: int = 10,
     skip: int = 0,
     search: Optional[str] = ""):
     
-    cache_key = f"posts:{skip}:{limit}:{search or "all"}"
+    cache_key = make_cache_key(request)
 
     cached_posts = await cache_get(cache_key)
+
     if cached_posts:
-        return cached_posts
+        body = json.dumps(cached_posts,sort_keys=True)
+        etag = hashlib.md5(body.encode()).hexdigest()
+        last_modified = datetime.utcnow().strftime("%a, %d %m %Y %H:%M:%S GMT")
+        
+        if request.headers.get("if-none-match")==etag:
+            return Response(status_code=304)
+        
+        response = JSONResponse(content=cached_posts)
+        response.headers["X-Cache"] = "HIT"
+        response.headers["Cache-Control"] = "public, max-age=60"
+        response.headers["ETag"] = etag
+        response.headers["Last-Modified"] = last_modified
+
+        return response
     
     results = db.query(
         models.Posts, func.count(models.Votes.post_id).label("votes")
@@ -41,13 +61,31 @@ async def get_posts(
         models.Posts.content.contains(search)
     ).limit(limit).offset(skip).all()
 
+    posts = [
+        {"Post":post, "votes":vote} for post, vote in results
+    ]
 
-    # transform each tuple into dict matching PostOut schema
-    return [{"Post":post, "votes":vote} for post, vote in results]
+    serialized_posts = jsonable_encoder(posts)
+
+    await cache_set(cache_key, serialized_posts, expire=120)
+    
+    # compute the etag and last modified headers
+    body = json.dumps(serialized_posts, sort_keys=True)
+    etag = hashlib.md5(body.encode()).hexdigest()
+    last_modified = datetime.utcnow().strftime("%a, %d %m %Y %H:%M:%S GMT")
+
+    # format the response headers
+    response = JSONResponse(content=serialized_posts)
+    response.headers['X-Cache'] = "MISS"
+    response.headers["Cache-Control"] = "public, max-age-60"
+    response.headers ["ETag"] = etag
+    response.headers["Last-Modified"] = last_modified
+
+    
+    return response
 
 
  
-
 
 # create a post in the api server
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=list[schemas.PostResponse]) 
@@ -63,12 +101,11 @@ def create_posts(posts: List[schemas.PostCreate], db:Session=Depends(get_db), cu
 
  
 #   get post by id
-@router.get("/{id}", response_model=schemas.PostResponse) #id field represents a path parameter
+@router.get("/{id}", response_model=schemas.PostResponse)
 def retrieve_post(id:int,db:Session=Depends(get_db), current_user: int= Depends(oauth2.get_current_user)):
-#   cursor.execute("SELECT * FROM posts WHERE id = %s", (id,))
-#   post=cursor.fetchone()
 
-    post= db.query(models.Posts).filter(models.Posts.id==id).first() # avoid going over all entries looking for id even if it has been found
+
+    post= db.query(models.Posts).filter(models.Posts.id==id).first()
 
     #results = db.query(models.Posts, func.count(models.Votes.post_id).label("Votes")).join(
        # models.Votes, models.Votes.post_id==models.Posts.id, isouter=True
@@ -86,13 +123,9 @@ def retrieve_post(id:int,db:Session=Depends(get_db), current_user: int= Depends(
 
 
 # delete a post with a specific id
-# status code 204 means that the request was successful but there is no content to return
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id: int,db:Session=Depends(get_db),current_user:int =Depends(oauth2.get_current_user)):
 
-#    cursor.execute("DELETE FROM posts WHERE id=%s RETURNING *", (id,))
-#    delete_post= cursor.fetchone()
-#    conn.commit()
 
     post_query=db.query(models.Posts).filter(models.Posts.id==id)
    
@@ -108,20 +141,15 @@ def delete_post(id: int,db:Session=Depends(get_db),current_user:int =Depends(oau
     db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)  
-# No content to return after deletion
+
 
 
 
 
 # update a post with a specific id
 @router.put("/{id}", response_model=schemas.PostResponse)
-def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db),current_user:int =Depends(oauth2.get_current_user)):
+async def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db),current_user:int =Depends(oauth2.get_current_user)):
 
-#    cursor.execute("UPDATE posts SET title=%s, content=%s, published=%s WHERE id=%s RETURNING *",(post.title,post.content,post.published, (id,)))
-
-#    updated_post=cursor.fetchone()
-#    conn.commit() # save changes permanently to the database
-    
      post_query = db.query(models.Posts).filter(models.Posts.id == id)
 
      updated_post = post_query.first()
@@ -143,5 +171,6 @@ def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db),cu
      post_query.update(post.dict(), synchronize_session=False)
      db.commit()
 
-     return post_query.first()  # for postman 
+     await cache_clear_pattern("cache:/posts")
+     return post_query.first()  
     
