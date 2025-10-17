@@ -10,8 +10,6 @@ class Settings(BaseSettings):
     secret_key: str
     algorithm: str
     access_token_expiration_time: int
-    redis_host:str
-    redis_port:str
 
     class Config:
         env_file = ".env" # load a file names .env from the project directory
