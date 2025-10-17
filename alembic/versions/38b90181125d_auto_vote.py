@@ -28,7 +28,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('user_id', 'post_id')
     )
-    op.drop_table('products')
+    op.drop_table('votes')
     op.drop_constraint(op.f('posts_user_fk'), 'posts', type_='foreignkey')
     op.create_foreign_key(None, 'posts', 'users', ['owner_id'], ['id'], onupdate='CASCADE', ondelete='CASCADE')
     # ### end Alembic commands ###
